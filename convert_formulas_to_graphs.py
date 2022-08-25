@@ -118,7 +118,7 @@ def parse_formulas_and_convert(rootdir,logic_to_parse,output_folder):
                     gc.collect()
 
 
-    if __name__ == '__main__':
+if __name__ == '__main__':
         parser = argparse.ArgumentParser(description = 'Convert formulas to graphs')
         parser.add_argument('rootdir', help='root folder which contains folders for different logics')
         parser.add_argument('logic', help='the name of the logic')
@@ -126,4 +126,4 @@ def parse_formulas_and_convert(rootdir,logic_to_parse,output_folder):
         
         args = parser.parse_args()
 
-        main(args.rootdir,args.logic,args.outdir)
+        parse_formulas_and_convert(args.rootdir,args.logic,args.outdir)
