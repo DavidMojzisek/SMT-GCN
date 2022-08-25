@@ -26,9 +26,9 @@ def check_graph(G, treshold):
     else:
         return False
 
-def parse_formulas_and_convert(rootdir,logic_to_parse,output_folder):
+def parse_formulas_and_convert(data_folder,logic_to_parse,output_folder):
 
-    rootdir = f"{rootdir}/{logic_to_parse}"
+    rootdir = f"{data_folder}/{logic_to_parse}"
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
@@ -64,6 +64,7 @@ def parse_formulas_and_convert(rootdir,logic_to_parse,output_folder):
                     #if str(Path(filepath)).replace("\\", "/")[5:] not in graphs_with_data:
                     #    continue
                     # check if the dot file already exists, this and next check is for the case this script runs multiple times
+                    filepath = filepath.split(data_folder)[1]
                     if os.path.exists(str(Path(output_folder, str(Path(*Path(filepath).parts[1:]))[:-5] + ".dot"))):
                         continue
                     if filepath in processed_graphs:
@@ -120,9 +121,9 @@ def parse_formulas_and_convert(rootdir,logic_to_parse,output_folder):
 
 if __name__ == '__main__':
         parser = argparse.ArgumentParser(description = 'Convert formulas to graphs')
-        parser.add_argument('rootdir', help='root folder which contains folders for different logics')
-        parser.add_argument('logic', help='the name of the logic')
-        parser.add_argument('outdir', help='path to the output dir')
+        parser.add_argument('rootdir', help='the root folder which contains folders for different logics')
+        parser.add_argument('logic', help='the name of the folder of a given logic')
+        parser.add_argument('outdir', help='the path to the output dir')
         
         args = parser.parse_args()
 
