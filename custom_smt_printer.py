@@ -41,7 +41,10 @@ class CustomSmtPrinter(TreeWalker):
         while stack:
             f = stack[-1]
             try:
+                
                 child = next(f)
+                if not 's' in stack[-1].gi_frame.f_locals:
+                    child = next(f)
                 sym = op.op_to_str(stack[-1].gi_frame.f_locals['s'].node_type())
                 #print(sym)
                 """
