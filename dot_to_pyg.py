@@ -8,11 +8,13 @@ from torch_geometric.data import Data
 import numpy as np
 import torch
 from pathlib import Path
-
+import argparse
 import global_params
 
 
 def assign_time(pd_frame_line, time_out, used_solvers):
+    """This function will convert a line in pd dataframe (full time table created in different file) to a list of classes.
+    Those classes are indices of an interval to which resulting wallclock time belongs."""
     y = []
     for sol in used_solvers: #0 status  1 time 2 result 3 expected
         if pd_frame_line[sol][3] == pd_frame_line[sol][2]:
@@ -28,6 +30,7 @@ def assign_time(pd_frame_line, time_out, used_solvers):
         if pd_frame_line[sol][0] != "complete":
           time = 2*time_out
 
+        """Determine interval - with a power function. Converts runtime to an index which will be appended to the result"""
         determine_interval = lambda t : int(np.floor(pow(t, np.log(global_params.number_of_intervals) / np.log(global_params.time_out)))) if t <= global_params.time_out else global_params.number_of_intervals
 
         y.append(determine_interval(time))
@@ -35,11 +38,9 @@ def assign_time(pd_frame_line, time_out, used_solvers):
     return y
 
 
-def create_data(logic_name):
-    dot_graph_folder, time_table_path, symbol_set_path = f"dot_processed/{logic_name}", f"full_time_table_{logic_name}.pickle", f"symbols_{logic_name}.pickle"
-
+def create_data(logic_name, dot_graph_folder, time_table_path, symbol_set_path):
     cnt = 0
-    timetab = pd.read_pickle(time_table_path)
+    timetab = pd.read_pickle(time_table_path) #full time table, with time, status, result and expected result
     used_solvers = list(timetab.columns)
 
     with open(symbol_set_path, 'rb') as f:
@@ -66,22 +67,22 @@ def create_data(logic_name):
                     continue
                 pd_frame_line = timetab.loc[problem_name]
                 gr = nx_agraph.from_agraph(pygraphviz.AGraph(filepath))
+                """Create an edge index for a given formula"""
                 edge_list = []
                 for ed in list(gr.edges):
                     edge_list += [(int(ed[0]), int(ed[1])), (int(ed[1]), int(ed[0])) ]
                 edge_index = list(zip(*list(edge_list)))
                 edge_index = torch.tensor(edge_index, dtype=torch.long)
 
+                """Assign one hot vectors to nodes based on the symbol name"""
                 x = []
                 for i in range(len(gr.nodes)):
                     x.append(np.eye(len(symbol_set), dtype = int)[symbol_set.index(dict(gr.nodes.data())[str(i)]["symbol"])] )
                 x = torch.tensor(np.array(x), dtype=torch.float)
 
-
+                """Determine intervals (target for NN) and create PyG data object instance"""
                 y = assign_time(pd_frame_line, global_params.time_out, used_solvers)
-
                 datapoint = Data(x = x, edge_index = edge_index, y = torch.tensor(y, dtype=torch.long), problem_name = problem_name)
-
                 cnt += 1
 
                 if os.path.exists(f'{logic_name}_PyG_datalist.pickle'):
@@ -103,7 +104,13 @@ def create_data(logic_name):
     return None
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Create PyG datalist from DOT graphs, full timetable and list of used symbols')
+    parser.add_argument('logic', help='the name of a logic to process')
+    parser.add_argument('dotdir', help='the root folder which contains folders for different logics processed to dot graphs')
 
-    logic_name = "QF_NRA"
-    create_data(logic_name)
+    args = parser.parse_args()
+
+    dot_graph_folder, time_table_path, symbol_set_path = f"{args.dotdir}/{args.logic}", f"full_time_table_{args.logic}.pickle", f"symbols_{args.logic}.pickle"
+
+    create_data(args.logic, dot_graph_folder, time_table_path, symbol_set_path)
     print("DONE")

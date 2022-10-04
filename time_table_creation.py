@@ -1,12 +1,14 @@
 import pandas as pd
 from collections import defaultdict, Counter
 
+"""This file will create 2 tables for listed logics for later to use. One table contains only wallclock time and second wallclock time and another information"""
+logic_names = {"QF_NRA", "AUFLIA", "UFNIA", "QF_NIA", "UFLIA"}
 
 data_all = pd.read_csv("data/Single_Query_Track.csv")
 data_all = data_all.iloc[:-1] #last line was empty in this case
 
 data_all = data_all.set_index("benchmark")
-logic_names = {"QF_NRA", "AUFLIA", "UFNIA", "QF_NIA", "UFLIA"}
+
 for log in logic_names:
     logic_name = f"Competition - Single Query Track/{log}"
     data = data_all.loc[data_all.index.str.contains(f"{logic_name}/")]
